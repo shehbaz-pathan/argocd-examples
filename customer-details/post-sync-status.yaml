@@ -4,6 +4,24 @@ metadata:
    name: customers-status
    annotations:
     argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+   backoffLimit: 3
+   template:
+     spec:
+       restartPolicy: OnFailure
+       containers:
+          - name: customers-status-checker
+            image: curlimages/curl
+            command: ["/bin/sh","-c","[[ $(curl http://customers.default.svc.cluster.local/ -s -o /dev/null -w \"%{http_code}\") -eq 200 ]] && exit 0 || exit 1"]
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+   name: web-front-status
+   annotations:
+    argocd.argoproj.io/hook: PostSync
     argocd.argoproj.io/sync-wave: "2"
     argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
 spec:
@@ -14,15 +32,4 @@ spec:
        containers:
           - name: customers-status-checker
             image: curlimages/curl
-            command: ["/bin/sh","/tmp/status.sh"]
-            volumeMounts:
-               - name: script
-                 mountPath: /tmp/status.sh
-                 subPath: status.sh
-       volumes:
-         - name: script
-           configMap:
-             name: post-sync-cm
-             items:
-               - key: status.sh
-                 path: status.sh
+            command: ["/bin/sh","-c","[[ $(curl http://web-frontend.default.svc.cluster.local/ -s -o /dev/null -w \"%{http_code}\") -eq 200 ]] && exit 0 || exit 1"]
