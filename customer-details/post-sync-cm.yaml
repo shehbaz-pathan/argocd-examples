@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+   name: post-sync-cm
+data:
+  status.sh: |-
+    #!/bin/sh
+    status_code=$(curl http://customers.default.svc.cluster.local/ -s -o /dev/null -w \"%{http_code}\" |sed 's/"//g')
+    if [[ "${status_code}" == "200" ]]
+    then 
+    echo "status check succeeded got status code ${status_code}"
+    exit 0
+    else
+    echo "status check failed with status code ${status_code}"
+    exit 1
+    fi

@@ -1,0 +1,28 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+   name: customers-status
+   annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+   backoffLimit: 3
+   template:
+     spec:
+       restartPolicy: OnFailure
+       containers:
+          - name: customers-status-checker
+            image: curlimages/curl
+            command: ["/bin/sh","/tmp/status.sh"]
+            volumeMounts:
+               - name: script
+                 mountPath: /tmp/status.sh
+                 subPath: status.sh
+       volumes:
+         - name: script
+           configMap:
+             name: post-sync-cm
+             items:
+               - key: status.sh
+                 path: status.sh
