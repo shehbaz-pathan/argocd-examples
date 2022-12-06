@@ -16,7 +16,6 @@ spec:
       labels:
         app: customers
         version: v2
-        sidecar.istio.io/inject: "true"
     spec:
       containers:
         - image: gcr.io/tetratelabs/customers:1.0.0
